@@ -3,6 +3,24 @@ import numpy as np
 import streamlit as st
 import yfinance as yf
 import plotly.graph_objects as go
+# Show Live Market Indexes
+# Market Ticker Section (Dow, Nasdaq, etc.)
+st.subheader("📍 Market Overview")
+
+indexes = {
+    "^DJI": "Dow Jones",
+    "^IXIC": "Nasdaq",
+    "^GSPC": "S&P 500"
+}
+
+for ticker, name in indexes.items():
+    index_data = yf.Ticker(ticker).history(period="1d")
+    if not index_data.empty:
+        price = index_data["Close"].iloc[-1]
+        change = index_data["Close"].iloc[-1] - index_data["Open"].iloc[-1]
+        pct = (change / index_data["Open"].iloc[-1]) * 100
+        color = "🟢" if change > 0 else "🔴"
+        st.write(f"{color} **{name}**: ${price:.2f} ({change:+.2f}, {pct:+.2f}%)")
 
 st.title("📈 Stock Tracker and Technical Analysis")
 
@@ -71,32 +89,3 @@ if symbol:
         macd_fig.add_trace(go.Scatter(
             x=data.index, y=data["Signal"], line=dict(color="red"), name="Signal Line"))
         st.plotly_chart(macd_fig)
-# Show Live Market Indexes
-st.markdown("### 📊 Market Overview")
-
-indexes = {
-    "Dow Jones": "^DJI",
-    "NASDAQ": "^IXIC",
-    "S&P 500": "^GSPC"
-}
-
-cols = st.columns(len(indexes))
-
-for i, (name, ticker) in enumerate(indexes.items()):
-    index_data = yf.Ticker(ticker).history(period="1d", interval="1m")
-    if not index_data.empty:
-        last_price = index_data["Close"].iloc[-1]
-        prev_close = index_data["Close"].iloc[0]
-        change = last_price - prev_close
-        pct = (change / prev_close) * 100
-        color = "green" if change > 0 else "red"
-
-        cols[i].markdown(f"""
-        <div style='text-align: center; padding: 10px; border: 1px solid #ddd; border-radius: 10px; background-color: #f9f9f9'>
-            <b>{name}</b><br>
-            <span style='font-size: 20px; color: {color}'>${last_price:,.2f}</span><br>
-            <span style='color: {color}'>{change:+.2f} ({pct:+.2f}%)</span>
-        </div>
-        """, unsafe_allow_html=True)
-    else:
-        cols[i].write(f"{name}: data not available")
